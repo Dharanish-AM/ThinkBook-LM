@@ -145,6 +145,44 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
                     {file.status === "processing" ? "Processing..." : file.status}
                   </span>
                 </div>
+                <div className="flex gap-2 ml-2">
+                  {/* Preview Button */}
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`http://localhost:8000/api/get_file_text?name=${file.name}`);
+                        const data = await res.json();
+                        alert(data.text || "No content preview available");
+                      } catch {
+                        alert("Failed to load preview");
+                      }
+                    }}
+                  >
+                    Preview
+                  </button>
+
+                  {/* Delete Button */}
+                  <button
+                    className="text-xs text-destructive hover:underline"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch(`http://localhost:8000/api/delete_file?name=${file.name}`, {
+                          method: "DELETE",
+                        });
+                        if (res.ok) {
+                          window.location.reload();
+                        } else {
+                          alert("Delete failed");
+                        }
+                      } catch {
+                        alert("Delete failed");
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
                 {file.progress !== undefined && file.status === "processing" && (
                   <div className="mt-2 w-full bg-muted rounded-full h-1 overflow-hidden">
                     <div

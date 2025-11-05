@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UploadPanel, UploadedFile, FileStatus } from "@/components/UploadPanel";
 import { ChatPanel, Message } from "@/components/ChatPanel";
@@ -19,52 +19,58 @@ const Index = () => {
     .filter((f) => f.status === "success")
     .reduce((sum, f) => sum + (f.chunks || 0), 0);
 
-  const handleFileUpload = (fileList: FileList) => {
-    const newFiles: UploadedFile[] = Array.from(fileList).map((file) => ({
+  const handleFileUpload = async (fileList: FileList) => {
+    const file = fileList[0];
+    const newFile: UploadedFile = {
       id: `file-${Date.now()}-${Math.random()}`,
       name: file.name,
       status: "processing" as FileStatus,
       progress: 0,
-    }));
+    };
+    setFiles((prev) => [...prev, newFile]);
 
-    setFiles((prev) => [...prev, ...newFiles]);
+    const formData = new FormData();
+    formData.append("file", file);
 
-    // Simulate processing
-    newFiles.forEach((file, index) => {
-      setTimeout(() => {
-        // Simulate progress
-        const progressInterval = setInterval(() => {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === file.id && f.progress !== undefined && f.progress < 90
-                ? { ...f, progress: f.progress + 10 }
-                : f
-            )
-          );
-        }, 200);
+    try {
+      const res = await fetch("http://localhost:8000/api/upload_file", {
+        method: "POST",
+        body: formData,
+      });
 
-        // Complete after 2 seconds
-        setTimeout(() => {
-          clearInterval(progressInterval);
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === file.id
-                ? {
-                    ...f,
-                    status: "success" as FileStatus,
-                    progress: 100,
-                    chunks: Math.floor(Math.random() * 20) + 10,
-                  }
-                : f
-            )
-          );
-          toast.success(`${file.name} indexed successfully ✓`);
-        }, 2000 + index * 500);
-      }, index * 200);
-    });
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await res.json();
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === newFile.id
+            ? {
+                ...f,
+                status: "success",
+                progress: 100,
+                chunks: data.chunks,
+              }
+            : f
+        )
+      );
+
+      toast.success(`${file.name} indexed successfully ✓`);
+    } catch (err) {
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === newFile.id
+            ? { ...f, status: "error", progress: 0 }
+            : f
+        )
+      );
+      toast.error(`Failed to upload ${file.name}`);
+    }
   };
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       role: "user",
@@ -74,37 +80,70 @@ const Index = () => {
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const mockCitations: Citation[] = [
-        {
-          id: `cite-${Date.now()}-1`,
-          docName: files[0]?.name?.split(".")[0] || "document",
-          chunkId: "chunk3",
-          content:
-            "This is the relevant excerpt from the document that supports the answer. It contains detailed information about the topic discussed in the query.",
-        },
-        {
-          id: `cite-${Date.now()}-2`,
-          docName: files[1]?.name?.split(".")[0] || "research",
-          chunkId: "chunk7",
-          content:
-            "Additional supporting evidence from another document. This provides context and further validation for the response provided.",
-        },
-      ];
+    const formData = new FormData();
+    formData.append("q", content);
+    formData.append("k", "4");
+
+    try {
+      const res = await fetch("http://localhost:8000/api/query", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Query failed");
+      }
+
+      const data = await res.json();
 
       const assistantMessage: Message = {
         id: `msg-${Date.now()}-assistant`,
         role: "assistant",
-        content: `Based on the documents, here's what I found: The research indicates significant findings in this area [${mockCitations[0].docName}::${mockCitations[0].chunkId}]. This is further supported by evidence from [${mockCitations[1].docName}::${mockCitations[1].chunkId}], which provides additional context and validation.`,
-        citations: mockCitations.map((c) => `${c.docName}::${c.chunkId}`),
+        content: data.answer,
+        citations: data.sources?.map(
+          (s: any) => `${s.source}::chunk${s.chunk_index}`
+        ),
       };
 
+      // Load citation panel data
+      const newCitations: Citation[] = data.sources?.map((s: any, i: number) => ({
+        id: `cite-${Date.now()}-${i}`,
+        docName: s.source.split(".")[0],
+        chunkId: `chunk${s.chunk_index}`,
+        content: data.raw_retrieval?.[i] || "",
+      })) || [];
+
+      setCitations((prev) => [...prev, ...newCitations]);
       setMessages((prev) => [...prev, assistantMessage]);
-      setCitations((prev) => [...prev, ...mockCitations]);
+    } catch (err) {
+      toast.error("Error querying documents");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
+
+  // Load previously indexed files from backend on mount
+  useEffect(() => {
+    const loadExistingFiles = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/list_files");
+        if (!res.ok) return;
+        const data = await res.json(); // expected [{name, chunks}]
+        const dbFiles: UploadedFile[] = data.map((f: any) => ({
+          id: `db-${f.name}`,
+          name: f.name,
+          status: "success" as FileStatus,
+          progress: 100,
+          chunks: f.chunks,
+        }));
+        setFiles(dbFiles);
+      } catch (err) {
+        console.error("Failed to load existing files", err);
+      }
+    };
+
+    loadExistingFiles();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -167,7 +206,7 @@ const Index = () => {
 
         {/* Citation Panel */}
         {citations.length > 0 && (
-          <div className="mt-6 h-64">
+          <div className="mt-6 min-h-64 max-h-96 overflow-hidden">
             <CitationPanel
               citations={citations}
               selectedCitation={selectedCitation}

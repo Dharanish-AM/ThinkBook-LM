@@ -2,17 +2,28 @@ from pathlib import Path
 import shutil
 import uuid
 
+
 def safe_filename(filename: str) -> str:
     # minimal sanitization
     return "".join(c for c in filename if c.isalnum() or c in "._- ").rstrip()
 
-def write_upload_bytes(upload_bytes: bytes, dest_dir: Path, original_filename: str) -> Path:
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    safe_name = safe_filename(original_filename)
-    unique = f"{uuid.uuid4().hex}_{safe_name}"
-    dest = dest_dir / unique
-    dest.write_bytes(upload_bytes)
-    return dest
+
+from pathlib import Path
+
+
+def write_upload_bytes(data: bytes, upload_dir: Path, filename: str):
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / filename
+
+    # Overwrite if exists
+    if file_path.exists():
+        file_path.unlink()
+
+    with open(file_path, "wb") as f:
+        f.write(data)
+
+    return file_path
+
 
 def read_file_text(path: Path, encoding: str = "utf-8") -> str:
     try:
