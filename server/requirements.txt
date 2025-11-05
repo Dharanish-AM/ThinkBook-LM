@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+sentence-transformers
+chromadb
+PyPDF2
+python-docx
+requests
+tqdm
+tiktoken
+python-dotenv
+pytest
+typing_extensions

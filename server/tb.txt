@@ -1,0 +1,1 @@
+ThinkBook LM is a private AI research assistant that runs fully offline and answers from local documents only.

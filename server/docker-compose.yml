@@ -1,0 +1,18 @@
+version: "3.8"
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./app:/app/app
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - UPLOAD_DIR=/app/data/uploads
+      - CHROMA_DIR=/app/data/chroma
+      - OLLAMA_URL=http://host.docker.internal:11434/api/generate
+      - OLLAMA_MODEL=llama3.1:8b
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+    restart: unless-stopped
