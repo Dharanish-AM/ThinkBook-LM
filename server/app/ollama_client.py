@@ -7,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 120
 
+
 def generate_from_prompt(prompt: str, max_tokens: int = 512, temperature: float = 0.0):
     """
     Supports both /api/generate (stream JSON) and /api/chat (stream chunks).
@@ -17,11 +18,17 @@ def generate_from_prompt(prompt: str, max_tokens: int = 512, temperature: float 
         "prompt": prompt,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "stream": True
+        "stream": True,
     }
     headers = {"Content-Type": "application/json"}
     try:
-        resp = requests.post(OLLAMA_URL, json=payload, headers=headers, stream=True, timeout=DEFAULT_TIMEOUT)
+        resp = requests.post(
+            OLLAMA_URL,
+            json=payload,
+            headers=headers,
+            stream=True,
+            timeout=DEFAULT_TIMEOUT,
+        )
         resp.raise_for_status()
 
         response_text = ""
@@ -33,7 +40,11 @@ def generate_from_prompt(prompt: str, max_tokens: int = 512, temperature: float 
                 try:
                     j = json.loads(chunk)
                     if isinstance(j, dict):
-                        if "message" in j and isinstance(j["message"], dict) and "content" in j["message"]:
+                        if (
+                            "message" in j
+                            and isinstance(j["message"], dict)
+                            and "content" in j["message"]
+                        ):
                             response_text += j["message"]["content"]
                         elif "response" in j:
                             response_text += j["response"]

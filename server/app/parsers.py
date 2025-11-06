@@ -3,6 +3,7 @@ from PyPDF2 import PdfReader
 import docx
 from .utils import read_file_text
 
+
 def extract_text_pdf(path: Path) -> str:
     texts = []
     try:
@@ -12,9 +13,10 @@ def extract_text_pdf(path: Path) -> str:
             if text:
                 texts.append(text)
     except Exception as e:
-        # Return any text fallback or empty
+        
         return " ".join(texts)
     return "\n".join(texts)
+
 
 def extract_text_docx(path: Path) -> str:
     try:
@@ -24,8 +26,10 @@ def extract_text_docx(path: Path) -> str:
     except Exception:
         return ""
 
+
 def extract_text_txt(path: Path) -> str:
     return read_file_text(path)
+
 
 def extract_text_auto(path: Path) -> str:
     ext = path.suffix.lower()
@@ -33,5 +37,5 @@ def extract_text_auto(path: Path) -> str:
         return extract_text_pdf(path)
     if ext in [".docx", ".doc"]:
         return extract_text_docx(path)
-    # fallback to raw text
+    
     return extract_text_txt(path)

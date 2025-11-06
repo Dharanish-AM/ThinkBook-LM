@@ -206,7 +206,7 @@ const Index = () => {
 
         {/* Citation Panel */}
         {citations.length > 0 && (
-          <div className="mt-6 min-h-64 max-h-96 overflow-hidden">
+          <div className="mt-6 mb-12 min-h-64 max-h-96">
             <CitationPanel
               citations={citations}
               selectedCitation={selectedCitation}

@@ -23,7 +23,7 @@ export function CitationPanel({
   onCloseCitation,
 }: CitationPanelProps) {
   return (
-    <Card className="glass-panel p-4 h-full">
+    <Card className="glass-panel p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-semibold flex items-center gap-2">
           <FileText className="h-4 w-4" />
@@ -46,7 +46,7 @@ export function CitationPanel({
           Citations will appear here when you ask questions
         </p>
       ) : (
-        <div className="space-y-3 overflow-y-auto max-h-[calc(100%-3rem)]">
+        <div className="space-y-3 overflow-y-auto flex-1 min-h-0">
           {/* Citation Chips */}
           {!selectedCitation && (
             <div className="flex flex-wrap gap-2">
@@ -75,8 +75,8 @@ export function CitationPanel({
                   </p>
                 </div>
               </div>
-              <div className="p-3 bg-background/50 rounded-md border border-border/50">
-                <p className="text-sm font-mono leading-relaxed whitespace-pre-wrap">
+              <div className="p-3 bg-background/50 rounded-md border border-border/50 max-h-64 overflow-y-auto">
+                <p className="text-sm overflow-y font-mono leading-relaxed whitespace-pre-wrap">
                   {selectedCitation.content}
                 </p>
               </div>

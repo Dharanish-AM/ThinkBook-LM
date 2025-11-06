@@ -4,7 +4,7 @@ import uuid
 
 
 def safe_filename(filename: str) -> str:
-    # minimal sanitization
+    
     return "".join(c for c in filename if c.isalnum() or c in "._- ").rstrip()
 
 
@@ -15,7 +15,7 @@ def write_upload_bytes(data: bytes, upload_dir: Path, filename: str):
     upload_dir.mkdir(parents=True, exist_ok=True)
     file_path = upload_dir / filename
 
-    # Overwrite if exists
+    
     if file_path.exists():
         file_path.unlink()
 

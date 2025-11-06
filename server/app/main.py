@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ThinkBook LM API", version="0.1")
 
-# CORS - allow frontend origins (comma-separated in env)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -20,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
+
 
 @app.get("/health")
 def health():
