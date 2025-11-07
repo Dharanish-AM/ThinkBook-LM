@@ -15,6 +15,8 @@ import uuid
 from fastapi import HTTPException
 from .config import CHROMA_DIR
 from .chroma_store import _client
+import asyncio
+import time
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -52,34 +54,52 @@ async def query(q: str = Form(...), k: int = Form(4)):
     q_text = q.strip()
     if not q_text:
         raise HTTPException(status_code=400, detail="Query is empty")
-    
-    model = get_embedding_model()
-    q_emb = model.encode([q_text], convert_to_numpy=True)[0]
-    
-    results = query_embeddings(q_emb, n_results=k)
-    retrieved = results.get("documents", [])
-    metadatas = results.get("metadatas", [])
-    
-    sources = []
-    for i, chunk in enumerate(retrieved):
-        md = metadatas[i] if i < len(metadatas) else {}
-        src = md.get("source", "unknown")
-        ci = md.get("chunk_index", i)
-        sources.append(f"[{src}::chunk{ci}] {chunk}")
-    
-    prompt = (
-        "Grounded QA Only. Use only the provided source texts below. "
-        'If the answer cannot be found in these sources, respond exactly: "No information in documents".\n\n'
-        "Sources:\n"
-    )
-    for s in sources:
-        prompt += "\n---\n" + s + "\n"
-    prompt += f"\nQuestion: {q_text}\n\nAnswer succinctly and include explicit citations like [filename::chunkIndex]."
+
+    start_time = time.time()
+    logger.info(f"Processing query: {q_text}")
+
     try:
-        answer = generate_from_prompt(prompt, max_tokens=512, temperature=0.0)
+        model = get_embedding_model()  # cached instance
+        q_emb = model.encode([q_text], convert_to_numpy=True)[0]
+
+        # Run embedding query asynchronously
+        results = await asyncio.to_thread(query_embeddings, q_emb, n_results=k)
+        retrieved = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+
+        sources = []
+        max_len = 500  # Limit chunk size for faster context building
+        for i, chunk in enumerate(retrieved):
+            md = metadatas[i] if i < len(metadatas) else {}
+            src = md.get("source", "unknown")
+            ci = md.get("chunk_index", i)
+            chunk = chunk[:max_len]
+            sources.append(f"[{src}::chunk{ci}] {chunk}")
+
+        prompt = (
+            "You are a precise and factual research assistant. "
+            "Use *only* the information explicitly available in the provided document excerpts below. "
+            "If the answer cannot be found, respond strictly with: 'No information in documents'. "
+            "Do not add assumptions or external facts. "
+            "Cite each statement accurately with the corresponding [filename::chunkIndex]. "
+            "Preserve technical terms and structure when summarizing.\n\n"
+            "=== Document Sources ===\n"
+        )
+        for s in sources:
+            prompt += f"\n---\n{s}\n"
+        prompt += (
+            f"\n=== User Query ===\n{q_text}\n\n"
+            "Provide a clear, concise answer based on the sources. "
+            "Include citations in the format [filename::chunkIndex] after each supporting fact."
+        )
+
+        answer = await asyncio.to_thread(generate_from_prompt, prompt, max_tokens=512, temperature=0.0)
     except Exception as e:
-        logger.error("LLM generation failed: %s", e)
+        logger.error(f"Query failed: {e}")
         raise HTTPException(status_code=502, detail="LLM generation failed")
+
+    end_time = time.time()
+    logger.info(f"Query completed in {end_time - start_time:.2f}s")
     return {"answer": answer, "sources": metadatas, "raw_retrieval": retrieved}
 
 

@@ -5,20 +5,21 @@ from .config import OLLAMA_URL, OLLAMA_MODEL
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_TIMEOUT = 120
+DEFAULT_TIMEOUT = 30
 
 
 def generate_from_prompt(prompt: str, max_tokens: int = 512, temperature: float = 0.0):
     """
-    Supports both /api/generate (stream JSON) and /api/chat (stream chunks).
-    Concatenates streamed text safely.
+    Calls the Ollama API using a non-streaming request for faster response.
+    Returns concatenated text safely.
     """
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": prompt,
         "max_tokens": max_tokens,
         "temperature": temperature,
-        "stream": True,
+        "stream": False,
+        "num_predict": 200,  # Limit token generation for faster responses
     }
     headers = {"Content-Type": "application/json"}
     try:
@@ -26,7 +27,6 @@ def generate_from_prompt(prompt: str, max_tokens: int = 512, temperature: float 
             OLLAMA_URL,
             json=payload,
             headers=headers,
-            stream=True,
             timeout=DEFAULT_TIMEOUT,
         )
         resp.raise_for_status()

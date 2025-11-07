@@ -9,6 +9,9 @@ _model_lock = threading.Lock()
 
 
 def get_embedding_model():
+    """
+    Returns a cached instance of the embedding model to prevent reloads per query.
+    """
     global _model
     if _model is None:
         with _model_lock:

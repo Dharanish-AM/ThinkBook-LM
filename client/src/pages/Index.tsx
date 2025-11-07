@@ -182,7 +182,7 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-6">
-        <div className="grid lg:grid-cols-[380px_1fr] gap-6 h-[calc(100vh-180px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-8 lg:gap-10 py-2 h-[calc(100vh-200px)] transition-all duration-300 ease-in-out">
           {/* Upload Panel */}
           <aside className="h-full">
             <UploadPanel
@@ -194,7 +194,7 @@ const Index = () => {
           </aside>
 
           {/* Chat Panel */}
-          <div className="h-full">
+          <div className="h-full bg-card/30 border border-border/40 rounded-xl p-4 shadow-sm backdrop-blur-sm overflow-hidden">
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
