@@ -2,10 +2,10 @@ import logging
 import requests
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import router
-from .config import ALLOWED_ORIGINS, LOG_LEVEL, OLLAMA_URL, OLLAMA_MODEL
-from .logging_config import setup_logging
-from .embeddings import get_embedding_model
+from .api.routes import router
+from .core.config import ALLOWED_ORIGINS, LOG_LEVEL, OLLAMA_URL, OLLAMA_MODEL
+from .core.logging_config import setup_logging
+from .rag.embeddings import get_embedding_model
 
 setup_logging(LOG_LEVEL)
 logger = logging.getLogger(__name__)

@@ -116,7 +116,8 @@ All colors MUST be HSL.
   }
 
   .font-mono {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas,
+      "Courier New", monospace;
   }
 }
 
@@ -151,5 +152,14 @@ All colors MUST be HSL.
 
   .status-error {
     @apply bg-destructive/10 text-destructive border border-destructive/20;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

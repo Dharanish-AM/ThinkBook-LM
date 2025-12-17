@@ -1,5 +1,5 @@
 from typing import List
-from .config import CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS
+from ..core.config import CHUNK_SIZE_TOKENS, CHUNK_OVERLAP_TOKENS
 import logging
 
 logger = logging.getLogger(__name__)

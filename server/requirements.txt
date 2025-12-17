@@ -12,3 +12,10 @@ tiktoken
 python-dotenv
 pytest
 typing_extensions
+black
+flake8
+isort
+pytesseract
+Pillow
+openai-whisper
+moviepy

@@ -20,7 +20,12 @@ interface UploadPanelProps {
   totalChunks: number;
 }
 
-export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: UploadPanelProps) {
+export function UploadPanel({
+  files,
+  onFileUpload,
+  totalDocs,
+  totalChunks,
+}: UploadPanelProps) {
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDrop = (e: React.DragEvent) => {
@@ -63,34 +68,46 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
     <div className="flex flex-col gap-4 h-full">
       {/* Drop Zone */}
       <Card
-        className={`glass-card p-8 border-2 border-dashed transition-all ${
+        className={`glass-card p-8 border-2 border-dashed transition-all duration-300 ease-in-out ${
           isDragging
-            ? "border-primary bg-primary/5 scale-[1.02]"
-            : "border-border/50 hover:border-primary/50"
+            ? "border-primary bg-primary/10 scale-[1.02] shadow-xl ring-2 ring-primary/20"
+            : "border-border/40 hover:border-primary/50 hover:bg-card/40"
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
       >
         <div className="flex flex-col items-center justify-center gap-4 text-center">
-          <div className={`rounded-full p-4 ${isDragging ? "bg-primary/10" : "bg-muted"}`}>
-            <Upload className={`h-8 w-8 ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
+          <div
+            className={`rounded-full p-4 transition-all duration-300 ${
+              isDragging
+                ? "bg-primary text-primary-foreground scale-110"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Upload className="h-8 w-8" />
           </div>
-          <div>
-            <p className="font-medium mb-1">
-              {isDragging ? "Drop files here" : "Drag & drop files"}
+          <div className="space-y-1">
+            <p className="font-semibold text-lg transition-colors">
+              {isDragging ? "Drop to upload!" : "Drag & drop files"}
             </p>
-            <p className="text-sm text-muted-foreground">PDF, DOCX, or TXT files</p>
+            <p className="text-sm text-muted-foreground">
+              PDF, DOCX, TXT, Images, Audio, or Video
+            </p>
           </div>
           <input
             type="file"
             id="file-upload"
             className="hidden"
-            accept=".pdf,.docx,.txt"
+            accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.mp3,.wav,.m4a,.mp4,.mov,.avi,.mkv"
             multiple
             onChange={handleFileInput}
           />
-          <Button asChild>
+          <Button
+            asChild
+            variant={isDragging ? "secondary" : "default"}
+            className="mt-2 transition-all hover:scale-105 active:scale-95"
+          >
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="h-4 w-4 mr-2" />
               Choose Files
@@ -114,7 +131,7 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
       {/* File List */}
       <Card className="glass-panel flex-1 p-4 overflow-hidden">
         <h3 className="font-semibold mb-3">Uploaded Files</h3>
-        <div className="space-y-2 overflow-y-auto max-h-[calc(100%-2rem)]">
+        <div className="space-y-2 overflow-y-auto scrollbar-hide max-h-[calc(100%-2rem)]">
           {files.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No files uploaded yet
@@ -124,16 +141,23 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
               <Card key={file.id} className="p-3 bg-background/50">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
-                    <div className={`mt-0.5 ${
-                      file.status === "success" ? "text-success" :
-                      file.status === "error" ? "text-destructive" :
-                      file.status === "processing" ? "text-warning" :
-                      "text-muted-foreground"
-                    }`}>
+                    <div
+                      className={`mt-0.5 ${
+                        file.status === "success"
+                          ? "text-success"
+                          : file.status === "error"
+                          ? "text-destructive"
+                          : file.status === "processing"
+                          ? "text-warning"
+                          : "text-muted-foreground"
+                      }`}
+                    >
                       {getStatusIcon(file.status)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{file.name}</p>
+                      <p className="text-sm font-medium truncate">
+                        {file.name}
+                      </p>
                       {file.chunks !== undefined && (
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {file.chunks} chunks
@@ -141,8 +165,12 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
                       )}
                     </div>
                   </div>
-                  <span className={`status-badge status-${file.status} whitespace-nowrap`}>
-                    {file.status === "processing" ? "Processing..." : file.status}
+                  <span
+                    className={`status-badge status-${file.status} whitespace-nowrap`}
+                  >
+                    {file.status === "processing"
+                      ? "Processing..."
+                      : file.status}
                   </span>
                 </div>
                 <div className="flex gap-2 ml-2">
@@ -151,7 +179,9 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
                     className="text-xs text-primary hover:underline"
                     onClick={async () => {
                       try {
-                        const res = await fetch(`http://localhost:8000/api/get_file_text?name=${file.name}`);
+                        const res = await fetch(
+                          `http://localhost:8000/api/get_file_text?name=${file.name}`
+                        );
                         const data = await res.json();
                         alert(data.text || "No content preview available");
                       } catch {
@@ -167,9 +197,12 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
                     className="text-xs text-destructive hover:underline"
                     onClick={async () => {
                       try {
-                        const res = await fetch(`http://localhost:8000/api/delete_file?name=${file.name}`, {
-                          method: "DELETE",
-                        });
+                        const res = await fetch(
+                          `http://localhost:8000/api/delete_file?name=${file.name}`,
+                          {
+                            method: "DELETE",
+                          }
+                        );
                         if (res.ok) {
                           window.location.reload();
                         } else {
@@ -183,14 +216,15 @@ export function UploadPanel({ files, onFileUpload, totalDocs, totalChunks }: Upl
                     Delete
                   </button>
                 </div>
-                {file.progress !== undefined && file.status === "processing" && (
-                  <div className="mt-2 w-full bg-muted rounded-full h-1 overflow-hidden">
-                    <div
-                      className="h-full bg-primary transition-all duration-300"
-                      style={{ width: `${file.progress}%` }}
-                    />
-                  </div>
-                )}
+                {file.progress !== undefined &&
+                  file.status === "processing" && (
+                    <div className="mt-2 w-full bg-muted rounded-full h-1 overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${file.progress}%` }}
+                      />
+                    </div>
+                  )}
               </Card>
             ))
           )}

@@ -1,16 +1,17 @@
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { UploadPanel, UploadedFile, FileStatus } from "@/components/UploadPanel";
+import {
+  UploadPanel,
+  UploadedFile,
+  FileStatus,
+} from "@/components/UploadPanel";
 import { ChatPanel, Message } from "@/components/ChatPanel";
-import { CitationPanel, Citation } from "@/components/CitationPanel";
 import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 const Index = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [citations, setCitations] = useState<Citation[]>([]);
-  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for demo
@@ -61,9 +62,7 @@ const Index = () => {
     } catch (err) {
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === newFile.id
-            ? { ...f, status: "error", progress: 0 }
-            : f
+          f.id === newFile.id ? { ...f, status: "error", progress: 0 } : f
         )
       );
       toast.error(`Failed to upload ${file.name}`);
@@ -100,20 +99,8 @@ const Index = () => {
         id: `msg-${Date.now()}-assistant`,
         role: "assistant",
         content: data.answer,
-        citations: data.sources?.map(
-          (s: any) => `${s.source}::chunk${s.chunk_index}`
-        ),
       };
 
-      // Load citation panel data
-      const newCitations: Citation[] = data.sources?.map((s: any, i: number) => ({
-        id: `cite-${Date.now()}-${i}`,
-        docName: s.source.split(".")[0],
-        chunkId: `chunk${s.chunk_index}`,
-        content: data.raw_retrieval?.[i] || "",
-      })) || [];
-
-      setCitations((prev) => [...prev, ...newCitations]);
       setMessages((prev) => [...prev, assistantMessage]);
     } catch (err) {
       toast.error("Error querying documents");
@@ -145,19 +132,47 @@ const Index = () => {
     loadExistingFiles();
   }, []);
 
+  // Load chat history from local storage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem("chat_history");
+
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (e) {
+        console.error("Failed to parse chat history");
+      }
+    }
+  }, []);
+
+  // Save chat history when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("chat_history", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem("chat_history");
+    toast.info("Chat history cleared");
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border/50 bg-card/30 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl z-50 supports-[backdrop-filter]:bg-background/60 flex-none">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <BookOpen className="h-6 w-6 text-primary-foreground" />
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center ring-1 ring-white/10">
+              <BookOpen className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">ThinkBook LM</h1>
-              <p className="text-xs text-muted-foreground">
-                Private Document Intelligence Assistant
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+                ThinkBook LM
+              </h1>
+              <p className="text-xs text-muted-foreground font-medium">
+                Private Document Intelligence
               </p>
             </div>
           </div>
@@ -166,7 +181,7 @@ const Index = () => {
       </header>
 
       {/* Privacy Banner */}
-      <div className="bg-success/10 border-y border-success/20 backdrop-blur-sm">
+      <div className="bg-success/10 border-y border-success/20 backdrop-blur-sm flex-none">
         <div className="container mx-auto px-6 py-2">
           <p className="text-sm text-center">
             <span className="inline-flex items-center gap-2">
@@ -181,10 +196,10 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-8 lg:gap-10 py-2 h-[calc(100vh-200px)] transition-all duration-300 ease-in-out">
+      <main className="flex-1 container mx-auto px-6 py-4 overflow-hidden min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 h-full transition-all duration-300 ease-in-out">
           {/* Upload Panel */}
-          <aside className="h-full">
+          <aside className="h-full overflow-hidden">
             <UploadPanel
               files={files}
               onFileUpload={handleFileUpload}
@@ -198,24 +213,18 @@ const Index = () => {
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
-              disabled={files.length === 0 || !files.some((f) => f.status === "success")}
+              onClearChat={handleClearChat}
+              disabled={
+                files.length === 0 || !files.some((f) => f.status === "success")
+              }
               isLoading={isLoading}
             />
           </div>
         </div>
-
-        {/* Citation Panel */}
-        {citations.length > 0 && (
-          <div className="mt-6 mb-12 min-h-64 max-h-96">
-            <CitationPanel
-              citations={citations}
-              selectedCitation={selectedCitation}
-              onSelectCitation={setSelectedCitation}
-              onCloseCitation={() => setSelectedCitation(null)}
-            />
-          </div>
-        )}
       </main>
+
+      {/* Footer */}
+      <footer className="container mx-auto px-6 py-2 flex-none" />
     </div>
   );
 };
