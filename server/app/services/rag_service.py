@@ -6,7 +6,7 @@ from typing import Dict, Any, List
 
 from ..rag.chunking import chunk_text
 from ..rag.embeddings import embed_texts, get_embedding_model
-from ..rag.chroma_store import add_documents, query_embeddings
+from ..rag.qdrant_store import add_documents, query_embeddings, get_collection_count
 from .llm_service import LLMService
 
 logger = logging.getLogger(__name__)
@@ -53,6 +53,19 @@ class RagService:
         start_time = time.time()
         logger.info(f"Processing query: {query_text}")
 
+        # 0. Check available chunks and clamp k
+        count = await asyncio.to_thread(get_collection_count)
+        if count == 0:
+            return {
+                "answer": "I don't have any documents uploaded yet. Please upload some files first.",
+                "sources": [],
+                "raw_retrieval": [],
+                "duration": time.time() - start_time
+            }
+        
+        k = min(k, count)
+        logger.info(f"Querying with k={k} (total docs: {count})")
+
         # 1. Embed query
         model = get_embedding_model() # This is fast access to cached obj
         # encode is blocking
@@ -78,16 +91,17 @@ class RagService:
         # 4. Construct Prompt
         context_block = "\n---\n".join(sources)
         prompt = (
-            "You are a precise and factual research assistant. "
-            "Use *only* the information explicitly available in the provided document excerpts below. "
-            "If the answer cannot be found, respond strictly with: 'No information in documents'. "
-            "Do not add assumptions or external facts. "
-            "Cite each statement accurately with the corresponding [filename::chunkIndex]. "
-            "Preserve technical terms and structure when summarizing.\n\n"
+            "You are an expert, intelligent research assistant. "
+            "Your goal is to provide comprehensive, accurate, and satisfying answers based *only* on the provided documents. "
+            "If the answer is not in the documents, say 'I couldn't find that information in the documents'.\n\n"
+            "Guidelines for a great response:\n"
+            "1. **Be Comprehensive**: Cover all relevant details found in the sources. Do not be overly brief unless asked.\n"
+            "2. **Structure**: Use Markdown headers (##), bullet points, and bold text to make the answer easy to read.\n"
+            "3. **Tone**: Maintain a professional, helpful, and engaging tone.\n"
+            "4. **No Hallucinations**: Do not invent facts.\n\n"
             f"=== Document Sources ===\n{context_block}\n\n"
             f"=== User Query ===\n{query_text}\n\n"
-            "Provide a clear, concise answer based on the sources. "
-            "Include citations in the format [filename::chunkIndex] after each supporting fact."
+            "Answer the query below in a well-structured format:"
         )
 
         # 5. Generate Answer via LLM

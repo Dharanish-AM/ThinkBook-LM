@@ -5,7 +5,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 
 from ..core.utils import write_upload_bytes
 from ..parsers import extract_text_auto
-from ..rag.chroma_store import _client
+from ..rag.qdrant_store import list_files_with_counts, delete_file as delete_file_qdrant
 from ..core.config import UPLOAD_DIR
 from ..services.rag_service import RagService
 from .models import UploadResponse, QueryResponse
@@ -13,17 +13,28 @@ from .models import UploadResponse, QueryResponse
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+@router.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "thinkbook-server (Qdrant)"}
+
+
 @router.post("/upload_file", response_model=UploadResponse)
 async def upload_file(file: UploadFile = File(...)):
     filename = file.filename
+    saved_path = UPLOAD_DIR / filename
+    
     try:
         content = await file.read()
-        saved_path = write_upload_bytes(content, UPLOAD_DIR, filename)
+        # Save to file system first
+        write_upload_bytes(content, UPLOAD_DIR, filename)
         
         # Using the new Parser Registry indirectly via extract_text_auto
         text = extract_text_auto(saved_path)
         if not text or not text.strip():
             logger.warning("No text extracted from file %s", filename)
+            # Cleanup invalid file
+            if saved_path.exists():
+                saved_path.unlink()
             raise HTTPException(status_code=400, detail="No text extracted from file. File type might not be supported or file is empty.")
         
         # Delegate processing to RagService
@@ -31,9 +42,15 @@ async def upload_file(file: UploadFile = File(...)):
         return result
         
     except ValueError as ve:
+         # Cleanup on error
+         if saved_path.exists():
+             saved_path.unlink()
          raise HTTPException(status_code=500, detail=str(ve))
     except Exception as e:
         logger.error(f"Upload failed: {e}")
+        # Cleanup on error
+        if saved_path.exists():
+            saved_path.unlink()
         raise HTTPException(status_code=500, detail="Internal processing error")
 
 
@@ -47,30 +64,13 @@ async def query(q: str = Form(...), k: int = Form(4)):
         return await RagService.query(q_text, k)
     except Exception as e:
         logger.error(f"Query failed: {e}")
-        # Return a polite error or re-raise
         raise HTTPException(status_code=502, detail="Query generation failed")
 
 
 @router.get("/list_files")
 async def list_files():
     try:
-        # This logic remains largely the same, but could be moved to ChromaStore/RagService if needed.
-        # Keeping it here for now as it's a simple DB read.
-        collections = _client.list_collections()
-        files = {}
-
-        for col in collections:
-            collection = _client.get_collection(col.name)
-            data = collection.get(include=["metadatas"])
-
-            for md in data.get("metadatas", []):
-                src = md.get("source")
-                if not src:
-                    continue
-                files.setdefault(src, 0)
-                files[src] += 1
-
-        return [{"name": k, "chunks": v} for k, v in files.items()]
+        return list_files_with_counts()
     except Exception as e:
         logger.error("Failed to list files: %s", e)
         raise HTTPException(status_code=500, detail="Failed to list files")
@@ -79,40 +79,20 @@ async def list_files():
 @router.delete("/delete_file")
 async def delete_file(name: str):
     try:
-        total_deleted = 0
-        collections = _client.list_collections()
-
-        for col in collections:
-            collection = _client.get_collection(col.name)
-            
-            data = collection.get(where={"source": name}, include=["metadatas"])
-            metadatas = data.get("metadatas", [])
-            
-            ids = []
-            for md in metadatas:
-                # Assuming id structure or just relying on metadata filter if delete supports it
-                # Logic from original file relied on reconstructing IDs which is brittle but...
-                # let's try to find IDs from data directly if possible?
-                # The original code reconstructed IDs: f"{Path(name).stem}::chunk_{md.get('chunk_index')}"
-                # Let's stick to original logic for safety, but wrapped in try/except
-                if md.get("source") == name:
-                     ids.append(f"{Path(name).stem}::chunk_{md.get('chunk_index')}")
-
-            if ids:
-                collection.delete(ids=ids)
-                total_deleted += len(ids)
+        # Delete from Vector DB
+        deleted_count = delete_file_qdrant(name)
 
         # File system delete
         file_path = UPLOAD_DIR / name
         if file_path.exists():
             file_path.unlink()
 
-        if total_deleted == 0 and not file_path.exists():
+        if deleted_count == 0 and not file_path.exists():
             raise HTTPException(
                 status_code=404, detail=f"No data found for file {name}"
             )
 
-        return {"status": "ok", "deleted_file": name, "deleted_chunks": total_deleted}
+        return {"status": "ok", "deleted_file": name, "deleted_chunks": deleted_count}
 
     except HTTPException:
         raise

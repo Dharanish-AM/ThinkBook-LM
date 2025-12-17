@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { UploadPanel, UploadedFile, FileStatus } from "@/components/UploadPanel";
+import {
+  UploadPanel,
+  UploadedFile,
+  FileStatus,
+} from "@/components/UploadPanel";
 import { ChatPanel, Message } from "@/components/ChatPanel";
 import { CitationPanel, Citation } from "@/components/CitationPanel";
 import { BookOpen } from "lucide-react";
@@ -10,7 +14,9 @@ const Index = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [citations, setCitations] = useState<Citation[]>([]);
-  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(null);
+  const [selectedCitation, setSelectedCitation] = useState<Citation | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for demo
@@ -61,9 +67,7 @@ const Index = () => {
     } catch (err) {
       setFiles((prev) =>
         prev.map((f) =>
-          f.id === newFile.id
-            ? { ...f, status: "error", progress: 0 }
-            : f
+          f.id === newFile.id ? { ...f, status: "error", progress: 0 } : f
         )
       );
       toast.error(`Failed to upload ${file.name}`);
@@ -106,12 +110,13 @@ const Index = () => {
       };
 
       // Load citation panel data
-      const newCitations: Citation[] = data.sources?.map((s: any, i: number) => ({
-        id: `cite-${Date.now()}-${i}`,
-        docName: s.source.split(".")[0],
-        chunkId: `chunk${s.chunk_index}`,
-        content: data.raw_retrieval?.[i] || "",
-      })) || [];
+      const newCitations: Citation[] =
+        data.sources?.map((s: any, i: number) => ({
+          id: `cite-${Date.now()}-${i}`,
+          docName: s.source.split(".")[0],
+          chunkId: `chunk${s.chunk_index}`,
+          content: data.raw_retrieval?.[i] || "",
+        })) || [];
 
       setCitations((prev) => [...prev, ...newCitations]);
       setMessages((prev) => [...prev, assistantMessage]);
@@ -144,6 +149,32 @@ const Index = () => {
 
     loadExistingFiles();
   }, []);
+
+  // Load chat history from local storage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem("chat_history");
+
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (e) {
+        console.error("Failed to parse chat history");
+      }
+    }
+  }, []);
+
+  // Save chat history when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("chat_history", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  const handleClearChat = () => {
+    setMessages([]);
+    localStorage.removeItem("chat_history");
+    toast.info("Chat history cleared");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -198,23 +229,14 @@ const Index = () => {
             <ChatPanel
               messages={messages}
               onSendMessage={handleSendMessage}
-              disabled={files.length === 0 || !files.some((f) => f.status === "success")}
+              onClearChat={handleClearChat}
+              disabled={
+                files.length === 0 || !files.some((f) => f.status === "success")
+              }
               isLoading={isLoading}
             />
           </div>
         </div>
-
-        {/* Citation Panel */}
-        {citations.length > 0 && (
-          <div className="mt-6 mb-12 min-h-64 max-h-96">
-            <CitationPanel
-              citations={citations}
-              selectedCitation={selectedCitation}
-              onSelectCitation={setSelectedCitation}
-              onCloseCitation={() => setSelectedCitation(null)}
-            />
-          </div>
-        )}
       </main>
     </div>
   );

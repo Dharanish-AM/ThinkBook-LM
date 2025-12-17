@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from moviepy.editor import VideoFileClip
+from moviepy import VideoFileClip
 from .base import BaseParser
 from .registry import ParserRegistry
 from .audio_parser import get_whisper_model
