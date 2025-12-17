@@ -160,25 +160,25 @@ export function ChatPanel({
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex gap-3 ${
+                  className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
                   {message.role === "assistant" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mt-1 shadow-sm">
                       <Bot className="h-5 w-5 text-primary" />
                     </div>
                   )}
                   <Card
-                    className={`max-w-[85%] p-4 shadow-sm ${
+                    className={`max-w-[85%] p-4 shadow-sm border-0 ${
                       message.role === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-card"
+                        : "bg-card/50 backdrop-blur-sm"
                     }`}
                   >
                     <div className="text-sm">
                       {message.role === "assistant" ? (
-                        <div className="prose dark:prose-invert max-w-none text-sm break-words">
+                        <div className="prose dark:prose-invert max-w-none text-sm break-words leading-relaxed">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={MarkdownComponents}
@@ -194,7 +194,7 @@ export function ChatPanel({
                     </div>
                   </Card>
                   {message.role === "user" && (
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center mt-1">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary flex items-center justify-center mt-1 shadow-sm">
                       <User className="h-5 w-5 text-secondary-foreground" />
                     </div>
                   )}

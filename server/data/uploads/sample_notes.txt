@@ -1,0 +1,6 @@
+Project: Multimodal RAG System
+Topic: Cloud Networking Basics
+
+AWS VPC Peering allows private connectivity between VPCs.
+OAuth is used for secure authorization.
+This content is for testing retrieval and grounding.

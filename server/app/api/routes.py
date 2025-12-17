@@ -41,6 +41,11 @@ async def upload_file(file: UploadFile = File(...)):
         result = await RagService.process_document(text, filename)
         return result
         
+    except HTTPException:
+        # Re-raise HTTP exceptions without wrapping them
+        if saved_path.exists():
+            saved_path.unlink()
+        raise
     except ValueError as ve:
          # Cleanup on error
          if saved_path.exists():

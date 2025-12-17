@@ -68,10 +68,10 @@ export function UploadPanel({
     <div className="flex flex-col gap-4 h-full">
       {/* Drop Zone */}
       <Card
-        className={`glass-card p-8 border-2 border-dashed transition-all ${
+        className={`glass-card p-8 border-2 border-dashed transition-all duration-300 ease-in-out ${
           isDragging
-            ? "border-primary bg-primary/5 scale-[1.02]"
-            : "border-border/50 hover:border-primary/50"
+            ? "border-primary bg-primary/10 scale-[1.02] shadow-xl ring-2 ring-primary/20"
+            : "border-border/40 hover:border-primary/50 hover:bg-card/40"
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -79,19 +79,17 @@ export function UploadPanel({
       >
         <div className="flex flex-col items-center justify-center gap-4 text-center">
           <div
-            className={`rounded-full p-4 ${
-              isDragging ? "bg-primary/10" : "bg-muted"
+            className={`rounded-full p-4 transition-all duration-300 ${
+              isDragging
+                ? "bg-primary text-primary-foreground scale-110"
+                : "bg-muted text-muted-foreground"
             }`}
           >
-            <Upload
-              className={`h-8 w-8 ${
-                isDragging ? "text-primary" : "text-muted-foreground"
-              }`}
-            />
+            <Upload className="h-8 w-8" />
           </div>
-          <div>
-            <p className="font-medium mb-1">
-              {isDragging ? "Drop files here" : "Drag & drop files"}
+          <div className="space-y-1">
+            <p className="font-semibold text-lg transition-colors">
+              {isDragging ? "Drop to upload!" : "Drag & drop files"}
             </p>
             <p className="text-sm text-muted-foreground">
               PDF, DOCX, TXT, Images, Audio, or Video
@@ -105,7 +103,11 @@ export function UploadPanel({
             multiple
             onChange={handleFileInput}
           />
-          <Button asChild>
+          <Button
+            asChild
+            variant={isDragging ? "secondary" : "default"}
+            className="mt-2 transition-all hover:scale-105 active:scale-95"
+          >
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="h-4 w-4 mr-2" />
               Choose Files
@@ -129,7 +131,7 @@ export function UploadPanel({
       {/* File List */}
       <Card className="glass-panel flex-1 p-4 overflow-hidden">
         <h3 className="font-semibold mb-3">Uploaded Files</h3>
-        <div className="space-y-2 overflow-y-auto max-h-[calc(100%-2rem)]">
+        <div className="space-y-2 overflow-y-auto scrollbar-hide max-h-[calc(100%-2rem)]">
           {files.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No files uploaded yet
