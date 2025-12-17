@@ -1,6 +1,6 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from .config import EMBEDDING_MODEL
+from ..core.config import EMBEDDING_MODEL
 import threading
 import torch
 

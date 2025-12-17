@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 import chromadb
-from .config import CHROMA_DIR
+from ..core.config import CHROMA_DIR
 import logging
 
 logger = logging.getLogger(__name__)

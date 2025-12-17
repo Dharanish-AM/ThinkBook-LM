@@ -19,3 +19,8 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+
+MAX_CHUNKS = int(os.getenv("MAX_CHUNKS", "5"))
+MAX_TOKENS = int(os.getenv("MAX_TOKENS", "512"))
+TEMPERATURE = float(os.getenv("TEMPERATURE", "0.0"))
+
