@@ -6,7 +6,6 @@ import {
   FileStatus,
 } from "@/components/UploadPanel";
 import { ChatPanel, Message } from "@/components/ChatPanel";
-import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/config/api";
 
@@ -165,11 +164,8 @@ const Index = () => {
       <header className="border-b border-white/5 bg-background/60 backdrop-blur-xl z-50 supports-[backdrop-filter]:bg-background/60 flex-none">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center ring-1 ring-white/10">
-              <BookOpen className="h-6 w-6 text-white" />
-            </div>
             <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+              <h1 className="text-xl font-bold text-primary">
                 ThinkBook LM
               </h1>
               <p className="text-xs text-muted-foreground font-medium">

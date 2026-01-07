@@ -62,25 +62,25 @@ export function ChatPanel({
       <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>
     ),
     h1: ({ children }: any) => (
-      <h1 className="text-xl font-bold mb-2 mt-4">{children}</h1>
+      <h1 className="text-base font-bold mb-2 mt-2">{children}</h1>
     ),
     h2: ({ children }: any) => (
-      <h2 className="text-lg font-semibold mb-2 mt-3">{children}</h2>
+      <h2 className="text-sm font-semibold mb-1.5 mt-2">{children}</h2>
     ),
     h3: ({ children }: any) => (
-      <h3 className="text-md font-semibold mb-1 mt-2">{children}</h3>
+      <h3 className="text-sm font-semibold mb-1 mt-1.5">{children}</h3>
     ),
     p: ({ children }: any) => (
-      <p className="leading-relaxed mb-2 last:mb-0">{children}</p>
+      <p className="leading-relaxed mb-2 last:mb-0 text-sm">{children}</p>
     ),
     blockquote: ({ children }: any) => (
-      <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic text-muted-foreground bg-muted/30 rounded-r-md">
+      <blockquote className="border-l-4 border-primary/30 pl-4 py-1 my-4 italic text-muted-foreground bg-muted/30 rounded-r-md text-sm">
         {children}
       </blockquote>
     ),
     table: ({ children }: any) => (
       <div className="my-4 w-full overflow-y-auto rounded-lg border border-border/50">
-        <table className="w-full text-sm">{children}</table>
+        <table className="w-full text-xs">{children}</table>
       </div>
     ),
     thead: ({ children }: any) => (
@@ -93,23 +93,23 @@ export function ChatPanel({
       <tr className="transition-colors hover:bg-muted/50">{children}</tr>
     ),
     th: ({ children }: any) => (
-      <th className="px-4 py-3 align-middle font-medium text-muted-foreground">
+      <th className="px-3 py-2 align-middle font-medium text-muted-foreground text-xs">
         {children}
       </th>
     ),
     td: ({ children }: any) => (
-      <td className="px-4 py-3 align-middle">{children}</td>
+      <td className="px-3 py-2 align-middle text-xs">{children}</td>
     ),
     code: ({ node, inline, className, children, ...props }: any) => {
       return inline ? (
         <code
-          className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-primary"
+          className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono text-primary"
           {...props}
         >
           {children}
         </code>
       ) : (
-        <pre className="bg-zinc-950 dark:bg-zinc-900 border border-border/50 p-4 rounded-lg overflow-x-auto text-sm font-mono my-4 shadow-sm">
+        <pre className="bg-zinc-950 dark:bg-zinc-900 border border-border/50 p-3 rounded-lg overflow-x-auto text-xs font-mono my-2 shadow-sm">
           <code {...props} className="text-zinc-50 dark:text-zinc-50">
             {children}
           </code>

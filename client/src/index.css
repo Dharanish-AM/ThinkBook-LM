@@ -7,6 +7,47 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Font family definitions */
+  :root {
+    --font-body: 'Poppins', sans-serif;
+    --font-heading: 'Poppins', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-body);
+    @apply antialiased text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    @apply font-semibold;
+  }
+
+  h1 {
+    @apply text-4xl font-bold;
+  }
+
+  h2 {
+    @apply text-3xl font-bold;
+  }
+
+  h3 {
+    @apply text-2xl font-semibold;
+  }
+
+  h4 {
+    @apply text-xl font-semibold;
+  }
+
+  h5, h6 {
+    @apply text-lg font-semibold;
+  }
+
+  code, pre {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+  }
+
   :root {
     --background: 210 20% 98%;
     --foreground: 210 20% 15%;

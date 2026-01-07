@@ -12,7 +12,16 @@ export default {
         "2xl": "1400px",
       },
     },
+    fontFamily: {
+      sans: ['Poppins', 'sans-serif'],
+      body: ['Poppins', 'sans-serif'],
+      heading: ['Poppins', 'sans-serif'],
+    },
     extend: {
+      fontFamily: {
+        body: ['Poppins', 'sans-serif'],
+        heading: ['Poppins', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
