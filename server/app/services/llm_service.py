@@ -1,7 +1,7 @@
 import logging
 import json
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 from ..core.config import OLLAMA_URL, OLLAMA_MODEL, MAX_TOKENS, TEMPERATURE
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ class LLMService:
     @staticmethod
     def generate(prompt: str, system_prompt: Optional[str] = None) -> str:
         """
-        Generate text from the LLM.
+        Generate text from the LLM (non-streaming).
         
         Args:
             prompt: The user query or compiled prompt.
@@ -23,8 +23,6 @@ class LLMService:
         """
         full_prompt = prompt
         if system_prompt:
-            # Simple concatenation for models that don't need specific chat template formatting here
-            # or rely on Ollama's modelfile.
             full_prompt = f"{system_prompt}\n\n{prompt}"
 
         payload = {
@@ -42,6 +40,62 @@ class LLMService:
         except requests.RequestException as e:
             logger.error(f"LLM request failed: {e}")
             raise Exception("Failed to generate response from LLM") from e
+
+    @staticmethod
+    def generate_stream(prompt: str, system_prompt: Optional[str] = None) -> Iterator[str]:
+        """
+        Generate text from the LLM with streaming response.
+        
+        Args:
+            prompt: The user query or compiled prompt.
+            system_prompt: Optional system instruction.
+            
+        Yields:
+            str: Chunks of generated text.
+        """
+        full_prompt = prompt
+        if system_prompt:
+            full_prompt = f"{system_prompt}\n\n{prompt}"
+
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": full_prompt,
+            "max_tokens": MAX_TOKENS,
+            "temperature": TEMPERATURE,
+            "stream": True
+        }
+        
+        try:
+            response = requests.post(
+                OLLAMA_URL, 
+                json=payload, 
+                timeout=120, 
+                stream=True
+            )
+            response.raise_for_status()
+            
+            for line in response.iter_lines():
+                if line:
+                    try:
+                        data = json.loads(line)
+                        
+                        # Extract response chunk
+                        if "response" in data:
+                            chunk = data["response"]
+                            if chunk:
+                                yield chunk
+                        
+                        # Check if done
+                        if data.get("done", False):
+                            break
+                            
+                    except json.JSONDecodeError:
+                        logger.warning(f"Failed to parse streaming response: {line}")
+                        continue
+                        
+        except requests.RequestException as e:
+            logger.error(f"LLM streaming request failed: {e}")
+            raise Exception("Failed to generate streaming response from LLM") from e
 
     @staticmethod
     def _parse_response(data: Dict[str, Any]) -> str:

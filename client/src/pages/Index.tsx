@@ -8,6 +8,7 @@ import {
 import { ChatPanel, Message } from "@/components/ChatPanel";
 import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/config/api";
 
 const Index = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -34,7 +35,7 @@ const Index = () => {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:8000/api/upload_file", {
+      const res = await fetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
         body: formData,
       });
@@ -84,7 +85,7 @@ const Index = () => {
     formData.append("k", "4");
 
     try {
-      const res = await fetch("http://localhost:8000/api/query", {
+      const res = await fetch(API_ENDPOINTS.query, {
         method: "POST",
         body: formData,
       });
@@ -113,7 +114,7 @@ const Index = () => {
   useEffect(() => {
     const loadExistingFiles = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/list_files");
+        const res = await fetch(API_ENDPOINTS.listFiles);
         if (!res.ok) return;
         const data = await res.json(); // expected [{name, chunks}]
         const dbFiles: UploadedFile[] = data.map((f: any) => ({

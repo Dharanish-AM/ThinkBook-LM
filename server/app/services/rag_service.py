@@ -1,8 +1,9 @@
 import asyncio
 import logging
 import time
+import json
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, AsyncIterator
 
 from ..rag.chunking import chunk_text
 from ..rag.embeddings import embed_texts, get_embedding_model
@@ -116,3 +117,88 @@ class RagService:
             "raw_retrieval": retrieved,
             "duration": end_time - start_time
         }
+
+    @staticmethod
+    async def query_stream(query_text: str, k: int = 4) -> AsyncIterator[str]:
+        """
+        Queries the knowledge base and streams the answer using the LLM.
+        
+        Yields JSON-encoded chunks for the client.
+        """
+        start_time = time.time()
+        logger.info(f"Processing streaming query: {query_text}")
+
+        # Check available chunks
+        count = await asyncio.to_thread(get_collection_count)
+        if count == 0:
+            yield json.dumps({
+                "type": "answer",
+                "content": "I don't have any documents uploaded yet. Please upload some files first."
+            })
+            yield json.dumps({"type": "done"})
+            return
+        
+        k = min(k, count)
+
+        # Embed query
+        model = get_embedding_model()
+        q_emb = await asyncio.to_thread(model.encode, [query_text], convert_to_numpy=True)
+        q_emb = q_emb[0]
+
+        # Retrieve relevant docs
+        results = await asyncio.to_thread(query_embeddings, q_emb, n_results=k)
+        retrieved = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+
+        # Send sources first
+        yield json.dumps({
+            "type": "sources",
+            "content": metadatas
+        })
+
+        # Construct context and prompt
+        sources = []
+        max_len = 500
+        for i, chunk in enumerate(retrieved):
+            md = metadatas[i] if i < len(metadatas) else {}
+            src = md.get("source", "unknown")
+            ci = md.get("chunk_index", i)
+            chunk_content = chunk[:max_len] if chunk else ""
+            sources.append(f"[{src}::chunk{ci}] {chunk_content}")
+
+        context_block = "\n---\n".join(sources)
+        prompt = (
+            "You are an expert, intelligent research assistant. "
+            "Your goal is to provide comprehensive, accurate, and satisfying answers based *only* on the provided documents. "
+            "If the answer is not in the documents, say 'I couldn't find that information in the documents'.\n\n"
+            "Guidelines for a great response:\n"
+            "1. **Be Comprehensive**: Cover all relevant details found in the sources. Do not be overly brief unless asked.\n"
+            "2. **Structure**: Use Markdown headers (##), bullet points, and bold text to make the answer easy to read.\n"
+            "3. **Tone**: Maintain a professional, helpful, and engaging tone.\n"
+            "4. **No Hallucinations**: Do not invent facts.\n\n"
+            f"=== Document Sources ===\n{context_block}\n\n"
+            f"=== User Query ===\n{query_text}\n\n"
+            "Answer the query below in a well-structured format:"
+        )
+
+        # Stream answer from LLM
+        def generate_sync():
+            return LLMService.generate_stream(prompt)
+        
+        stream_gen = await asyncio.to_thread(generate_sync)
+        
+        for chunk in stream_gen:
+            yield json.dumps({
+                "type": "answer",
+                "content": chunk
+            })
+            await asyncio.sleep(0)  # Allow event loop to process other tasks
+        
+        # Send completion signal
+        end_time = time.time()
+        logger.info(f"Streaming query completed in {end_time - start_time:.2f}s")
+        
+        yield json.dumps({
+            "type": "done",
+            "duration": end_time - start_time
+        })
