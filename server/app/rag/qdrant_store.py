@@ -195,16 +195,9 @@ def delete_file(filename: str) -> int:
 def list_files_with_counts() -> List[Dict[str, Any]]:
     """
     Aggregates unique files and their chunk counts.
-    OPTIMIZED: Uses local file registry JSON for O(1) access.
-    Falls back to building registry from DB if missing.
+    Always validates against actual Qdrant database to ensure consistency.
     """
-    # 1. Try Registry
-    registry = _load_registry()
-    if registry:
-        return [{"name": k, "chunks": v} for k, v in registry.items()]
-    
-    # 2. Fallback: Scroll DB (Slow, O(N))
-    logger.warning("File registry missing, rebuilding from Qdrant scan...")
+    # Always scan the actual database to ensure accuracy
     file_counts = {}
     
     offset = None
@@ -227,7 +220,7 @@ def list_files_with_counts() -> List[Dict[str, Any]]:
         if offset is None:
             break
     
-    # Save the rebuilt registry
+    # Sync registry with actual database state
     _save_registry(file_counts)
             
     return [{"name": k, "chunks": v} for k, v in file_counts.items()]

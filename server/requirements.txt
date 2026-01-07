@@ -19,3 +19,5 @@ pytesseract
 Pillow
 openai-whisper
 moviepy
+python-magic
+qdrant-client

@@ -30,3 +30,33 @@ MAX_CHUNKS = int(os.getenv("THINKBOOK_MAX_CHUNKS", "5"))
 MAX_TOKENS = int(os.getenv("THINKBOOK_MAX_TOKENS", "512"))
 TEMPERATURE = float(os.getenv("THINKBOOK_TEMPERATURE", "0.0"))
 
+# File upload security settings
+MAX_FILE_SIZE_MB = int(os.getenv("THINKBOOK_MAX_FILE_SIZE_MB", "50"))
+MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+# Allowed MIME types for uploads
+ALLOWED_MIME_TYPES = {
+    # Documents
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+    # Images
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    # Audio
+    "audio/wav",
+    "audio/mpeg",
+    "audio/mp3",
+    # Video
+    "video/mp4",
+}
+
+# Allowed file extensions (backup validation)
+ALLOWED_EXTENSIONS = {
+    ".pdf", ".docx", ".txt",
+    ".png", ".jpg", ".jpeg",
+    ".wav", ".mp3",
+    ".mp4"
+}
+
